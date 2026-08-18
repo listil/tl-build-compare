@@ -4,6 +4,8 @@ Torchlight Infinite 캐릭터 종합 스탯(속성 탭) 비교 도구. `UE_game.
 
 **바로 사용:** https://listil.github.io/tl-build-compare/tl-build-compare.html
 
+![결과 화면 미리보기 — 빌드 카드, 공격 프로필 오각형 차트, 카테고리별 속성 비교표](3.png)
+
 ## 사용법
 
 ### 1. 게임에서 속성 데이터 남기기
