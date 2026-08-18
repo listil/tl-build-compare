@@ -1,0 +1,1151 @@
+<title>빌드 스탯 대조표 (웹 버전)</title>
+<style>
+  :root {
+    --bg: #131217;
+    --surface: #1b1a21;
+    --surface-2: #232229;
+    --surface-3: #2b2932;
+    --border: #322f3a;
+    --text: #ece8f2;
+    --text-dim: #9a94a8;
+    --text-faint: #6b6578;
+    --accent: #e8823a;
+    --accent-soft: rgba(232, 130, 58, 0.16);
+    --accent-text: #f4a86b;
+    --el-phys: #b8ac93;
+    --el-cold: #6ec9de;
+    --el-fire: #e8823a;
+    --el-light: #a68af0;
+    --el-erosion: #7fc98a;
+    --el-neutral: #8a86a0;
+    color-scheme: dark;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f3f1ec;
+      --surface: #ffffff;
+      --surface-2: #ebe7dd;
+      --surface-3: #e2ddd0;
+      --border: #ddd6c6;
+      --text: #221f2b;
+      --text-dim: #6b6577;
+      --text-faint: #928c9d;
+      --accent: #cf611a;
+      --accent-soft: rgba(207, 97, 26, 0.12);
+      --accent-text: #a94e12;
+      --el-phys: #8a7d5f;
+      --el-cold: #1f8fa8;
+      --el-fire: #cf611a;
+      --el-light: #6f4fc4;
+      --el-erosion: #3f8a4c;
+      --el-neutral: #706b80;
+      color-scheme: light;
+    }
+  }
+
+  :root[data-theme="light"] {
+    --bg: #f3f1ec;
+    --surface: #ffffff;
+    --surface-2: #ebe7dd;
+    --surface-3: #e2ddd0;
+    --border: #ddd6c6;
+    --text: #221f2b;
+    --text-dim: #6b6577;
+    --text-faint: #928c9d;
+    --accent: #cf611a;
+    --accent-soft: rgba(207, 97, 26, 0.12);
+    --accent-text: #a94e12;
+    --el-phys: #8a7d5f;
+    --el-cold: #1f8fa8;
+    --el-fire: #cf611a;
+    --el-light: #6f4fc4;
+    --el-erosion: #3f8a4c;
+    --el-neutral: #706b80;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", "D2Coding", "SFMono-Regular", monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+
+  h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 68ch;
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--text-faint);
+  }
+  .meta-row span::before { content: "·"; margin-right: 18px; color: var(--border); }
+  .meta-row span:first-child::before { content: none; margin-right: 0; }
+
+  .upload-box {
+    background: var(--surface);
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .upload-box:hover, .upload-box.dragover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+  .upload-icon { font-size: 28px; }
+  .upload-title { font-weight: 700; font-size: 15px; }
+  .upload-hint { font-size: 12px; color: var(--text-faint); word-break: break-all; }
+  .upload-status {
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .upload-status.error { color: #e8623a; }
+  .upload-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .card.me { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .card-name { font-weight: 800; font-size: 16px; }
+  .lv-badge {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--accent-text);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 3px 10px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .card-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 16px; }
+
+  .pentagon-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .pentagon-wrap { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 24px; }
+  #pentagonSvg { flex: none; max-width: 100%; height: auto; }
+  .pentagon-legend { display: flex; flex-direction: column; gap: 7px; }
+  .pentagon-legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-dim); }
+  .pentagon-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .pentagon-tooltip {
+    position: absolute;
+    display: none;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 10;
+  }
+  .pentagon-tooltip .ptip-build { color: var(--text-dim); }
+  .pentagon-tooltip .ptip-value { font-weight: 700; margin-left: 6px; }
+  .stat-label { font-size: 11px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+  .stat-value {
+    font-family: ui-monospace, "Cascadia Code", "Consolas", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 17px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+  .search {
+    flex: 1 1 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .search:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .search::placeholder { color: var(--text-faint); }
+
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle input { accent-color: var(--accent); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12.5px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--text-faint); }
+  .chip[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+  }
+  .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .col-select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .col-select-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .col-select-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint); }
+  .link-btn {
+    background: none; border: none; padding: 0;
+    font-size: 12.5px; font-weight: 600; color: var(--accent-text);
+    cursor: pointer; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .link-btn:hover { color: var(--accent); }
+
+  .col-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .col-chip .chk-box {
+    width: 13px; height: 13px; border-radius: 3px;
+    border: 1.5px solid var(--text-faint);
+    flex: none;
+    position: relative;
+  }
+  .col-chip[aria-pressed="true"] .chk-box {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .col-chip[aria-pressed="true"] .chk-box::after {
+    content: ""; position: absolute; left: 3px; top: 0px;
+    width: 4px; height: 7px;
+    border: solid var(--surface); border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+  .col-chip[aria-pressed="false"] { opacity: 0.6; }
+  .col-chip .lv-tag { color: var(--text-faint); font-family: ui-monospace, Consolas, monospace; font-size: 11px; }
+
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-2);
+    text-align: left;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    font-weight: 700;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    z-index: 1;
+    white-space: nowrap;
+  }
+  thead th.num { text-align: right; }
+
+  .cat-row td {
+    background: var(--surface-3);
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    padding: 7px 16px;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr.data-row { border-bottom: 1px solid var(--border); }
+  tbody tr.data-row:last-child { border-bottom: none; }
+  tbody tr.data-row:hover { background: var(--surface-2); }
+
+  td.name-cell { padding: 9px 16px; display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; margin-top: 4px; }
+  .name-text { font-size: 13.5px; }
+  .attr-id { font-size: 10.5px; color: var(--text-faint); font-family: ui-monospace, Consolas, monospace; }
+  .attr-desc { font-size: 11px; color: var(--text-faint); white-space: normal; line-height: 1.4; max-width: 320px; }
+
+  td.val-cell { padding: 9px 16px; text-align: right; vertical-align: middle; min-width: 140px; }
+  .val-num { font-size: 13.5px; font-weight: 600; }
+  .val-sub { font-size: 13.5px; font-weight: 600; color: inherit; }
+
+  .val-cell.is-max { background: var(--accent-soft); }
+  .val-cell.is-max .val-num { color: var(--accent-text); font-weight: 800; }
+
+  .bar-track { height: 4px; border-radius: 2px; background: var(--surface-3); margin-top: 5px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 2px; }
+
+  .tip-wrap { position: relative; cursor: help; border-bottom: 1px dotted var(--text-faint); }
+  .tip-wrap .tip-pop {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    z-index: 6;
+    text-align: left;
+  }
+  .tip-wrap:hover .tip-pop, .tip-wrap:focus .tip-pop, .tip-wrap:focus-visible .tip-pop {
+    opacity: 1; transform: translateY(0); pointer-events: auto;
+  }
+  .tip-row { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text-dim); white-space: nowrap; padding: 2px 0; }
+  .tip-row .mono { color: var(--text); font-weight: 600; margin-left: auto; padding-left: 14px; }
+  .tip-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+
+  .empty-msg { padding: 32px; text-align: center; color: var(--text-faint); font-size: 13.5px; }
+
+  footer { border-top: 1px solid var(--border); padding-top: 20px; font-size: 12.5px; color: var(--text-faint); line-height: 1.7; }
+
+  @media (max-width: 620px) {
+    .cards { grid-template-columns: 1fr; }
+    h1 { font-size: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chip, .toggle, .tip-wrap .tip-pop, .upload-box { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">UE_game.log 브라우저 로컬 분석</div>
+    <h1>빌드 스탯 대조표 · 웹 버전</h1>
+    <p class="subtitle" id="subtitleText">
+      내 캐릭터와, "빌드 참조" 화면에서 열람한 다른 유저 빌드의 종합 전투 스탯을 나란히 비교합니다.
+      로그 파일은 서버로 전송되지 않고 이 브라우저 안에서만 읽고 분석합니다.
+    </p>
+    <div class="meta-row" id="metaRow"></div>
+  </header>
+
+  <section class="upload-box" id="uploadBox" tabindex="0" role="button" aria-label="UE_game.log 파일 선택">
+    <div class="upload-icon">📄</div>
+    <div class="upload-title">UE_game.log 파일을 여기로 끌어놓거나 클릭해서 선택하세요</div>
+    <div class="upload-hint mono" id="pathHint"></div>
+    <input type="file" id="fileInput" accept=".log,.txt" style="display:none" />
+    <div class="upload-status" id="uploadStatus">
+      게임에서 캐릭터 정보창(또는 다른 유저의 빌드 참조 화면)의 속성 탭을 한 번 열어봐야 로그에 데이터가 남습니다.
+    </div>
+  </section>
+
+  <section class="col-select" id="colSelectSection" style="display:none">
+    <div class="col-select-head">
+      <span class="col-select-label">비교할 항목 선택</span>
+      <button class="link-btn" id="selectAllBtn" type="button">전체 선택</button>
+    </div>
+    <div class="chips" id="colChips"></div>
+  </section>
+
+  <section class="cards" id="cards"></section>
+
+  <section class="pentagon-card" id="pentagonSection" style="display:none">
+    <div class="col-select-label">공격 프로필</div>
+    <div class="pentagon-wrap">
+      <svg id="pentagonSvg" viewBox="0 0 400 340" width="400" height="340"></svg>
+      <div class="pentagon-tooltip" id="pentagonTooltip"></div>
+      <div class="pentagon-legend" id="pentagonLegend"></div>
+    </div>
+  </section>
+
+  <section class="controls" id="controlsSection" style="display:none">
+    <input class="search" id="search" type="text" placeholder="속성 이름으로 검색 (예: 크리티컬, 저항, 이동 속도)" />
+    <label class="toggle"><input type="checkbox" id="hideZero" checked />전부 0인 항목 숨기기</label>
+    <label class="toggle"><input type="checkbox" id="hideSame" />값이 같은 항목 숨기기</label>
+  </section>
+
+  <section class="chips" id="chips"></section>
+
+  <section class="table-scroll" id="tableSection" style="display:none">
+    <table>
+      <thead><tr id="headRow"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-msg" id="emptyMsg" style="display:none;">조건에 맞는 항목이 없습니다.</div>
+  </section>
+
+  <footer>
+    출처: 선택한 <span class="mono">UE_game.log</span>에서 관측된 <span class="mono">RoleAttrMgr@Attri.Id</span> 덤프를 파싱 (100% 브라우저 내 처리, 업로드 없음).
+    닉네임·계정ID 등 신원 정보는 이 경로로 로그에 남지 않는 것으로 확인되어 포함하지 않았습니다.
+    개인 비교 목적의 로컬 분석 자료이며, 배포 목적이 아닙니다.
+  </footer>
+</div>
+
+<script>
+const DEFAULT_LOG_HINT = String.raw`...\Torchlight Infinite\UE_game\TorchLight\Saved\Logs\UE_game.log`;
+document.getElementById("pathHint").textContent = "예: " + DEFAULT_LOG_HINT;
+
+const MIN_ATTRS = 50;
+const SELF_ID_THRESHOLD = 1e9;
+
+const SET_ID_RE = /AttrUtils:SetPlayerId = (\S+)/;
+const SET_LV_RE = /AttrUtils:SetPlayerLv = (\d+)/;
+const TS_RE = /^\[(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2}):/;
+
+function fmtTs(raw) {
+  const m = TS_RE.exec(raw);
+  if (!m) return "?";
+  const [, , mo, d, h, mi, s] = m;
+  return `${mo}-${d} ${h}:${mi}:${s}`;
+}
+
+function splitSegments(lines) {
+  const segments = [];
+  let cur = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const m = SET_ID_RE.exec(line);
+    if (m) {
+      if (cur) { cur.end = i - 1; segments.push(cur); }
+      cur = { id: m[1], lv: null, start: i, end: null };
+    }
+    const m2 = SET_LV_RE.exec(line);
+    if (m2 && cur) cur.lv = m2[1];
+  }
+  if (cur) { cur.end = lines.length - 1; segments.push(cur); }
+  return segments;
+}
+
+function parseSegment(lines, seg) {
+  const ATTR_RE = /RoleAttrMgr@Attri\.Id\s+(.+?)\s+(\d+)\s*$/;
+  const VAL_LINE_RE = /RoleAttrMgr@(\[.+)$/;
+  const result = {};
+  for (let i = seg.start; i <= seg.end; i++) {
+    const am = ATTR_RE.exec(lines[i]);
+    if (!am) continue;
+    const name = am[1].trim().replace(/﻿/g, "");
+    const attrId = am[2];
+    let vals = [];
+    if (i + 1 < lines.length) {
+      const vm = VAL_LINE_RE.exec(lines[i + 1]);
+      if (vm) {
+        vals = [...vm[1].matchAll(/\[\d+\]\s*=\s*(-?[\d.eE+-]+)/g)].map(x => parseFloat(x[1]));
+      }
+    }
+    result[attrId] = { name, values: vals };
+  }
+  return result;
+}
+
+async function sha256Hex12(str) {
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 12);
+}
+
+async function buildCandidates(text) {
+  const lines = text.split(/\r\n|\r|\n/);
+  const segments = splitSegments(lines);
+  const candidates = [];
+  for (const seg of segments) {
+    const parsed = parseSegment(lines, seg);
+    const ids = Object.keys(parsed);
+    if (ids.length < MIN_ATTRS) continue;
+    const sortedIds = ids.slice().sort((a, b) => Number(a) - Number(b));
+    const fpSrc = sortedIds.map(k => `${k}=${JSON.stringify(parsed[k].values)}`).join(";");
+    const fp = await sha256Hex12(fpSrc);
+    const isSelf = /^\d+$/.test(seg.id) && Number(seg.id) > SELF_ID_THRESHOLD;
+    candidates.push({
+      id: seg.id, lv: seg.lv, ts: fmtTs(lines[seg.start]),
+      fp, attrs: parsed, isSelf, count: ids.length,
+    });
+  }
+  return candidates;
+}
+
+function isSubset(small, big) {
+  if (small.fp === big.fp || small.count >= big.count) return false;
+  for (const [aid, d] of Object.entries(small.attrs)) {
+    const bd = big.attrs[aid];
+    if (!bd || JSON.stringify(bd.values) !== JSON.stringify(d.values)) return false;
+  }
+  return true;
+}
+
+function collapsePartialDupes(candidates) {
+  const dropped = new Set();
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = 0; j < candidates.length; j++) {
+      if (i !== j && isSubset(candidates[i], candidates[j])) { dropped.add(candidates[i].fp); break; }
+    }
+  }
+  return candidates.filter(c => !dropped.has(c.fp));
+}
+
+function dedupe(candidates) {
+  const seen = new Map();
+  const order = [];
+  for (const c of candidates) {
+    if (!seen.has(c.fp)) { seen.set(c.fp, c); order.push(c.fp); }
+    else if (c.count > seen.get(c.fp).count) { seen.get(c.fp).attrs = c.attrs; seen.get(c.fp).count = c.count; }
+  }
+  return collapsePartialDupes(order.map(fp => seen.get(fp)));
+}
+
+function buildRows(columnsAttrs) {
+  const allIds = new Set();
+  const names = {};
+  for (const attrs of Object.values(columnsAttrs)) {
+    for (const [aid, d] of Object.entries(attrs)) {
+      allIds.add(aid);
+      if (!(aid in names)) names[aid] = d.name;
+    }
+  }
+  const ids = [...allIds].sort((a, b) => Number(a) - Number(b));
+  return ids.map(aid => {
+    const values = {};
+    for (const [key, attrs] of Object.entries(columnsAttrs)) {
+      values[key] = attrs[aid] ? attrs[aid].values : [];
+    }
+    return { id: Number(aid), name: names[aid], values };
+  });
+}
+
+function fmt(n) {
+  if (n === undefined || n === null || isNaN(n)) return "–";
+  if (n === 0) return "0";
+  const neg = n < 0;
+  const a = Math.abs(n);
+  let s;
+  if (a < 0.0005) s = "0";
+  else if (a >= 1e9) s = (a / 1e9).toFixed(2) + "B";
+  else if (a >= 1e6) s = (a / 1e6).toFixed(2) + "M";
+  else if (a >= 1e3) s = (a / 1e3).toFixed(2) + "K";
+  else if (a >= 1) s = a.toFixed(a % 1 === 0 ? 0 : 2);
+  else s = a.toFixed(3);
+  return (neg ? "-" : "") + s;
+}
+
+const CATS = [
+  { key: "atk",   label: "공격 대미지",     test: id => id >= 10000 && id < 15000 },
+  { key: "combat",label: "전투 보정",       test: id => id >= 20000 && id < 23000 },
+  { key: "res",   label: "원소 저항",       test: id => id >= 30000 && id < 31000 },
+  { key: "def",   label: "방어 · 생존",     test: id => id >= 40000 && id < 44000 },
+  { key: "regen", label: "회복",           test: id => id >= 51000 && id < 52000 },
+  { key: "summon",label: "소환체",         test: id => (id >= 150000 && id < 151000) || (id >= 153000 && id < 154000) },
+  { key: "dot",   label: "상태이상 대미지", test: id => (id >= 140000 && id < 141000) || (id >= 160000 && id < 162000) },
+  { key: "ail",   label: "상태이상 확률",   test: id => id >= 70000 && id < 90000 },
+  { key: "util",  label: "유틸리티",        test: id => id >= 60000 && id < 61000 },
+];
+function categoryOf(id) {
+  for (const c of CATS) if (c.test(id)) return c;
+  return { key: "etc", label: "기타" };
+}
+
+const ELEMENT_WORDS = [
+  { word: "물리", color: "var(--el-phys)" },
+  { word: "냉기", color: "var(--el-cold)" },
+  { word: "화염", color: "var(--el-fire)" },
+  { word: "번개", color: "var(--el-light)" },
+  { word: "부식", color: "var(--el-erosion)" },
+];
+function dotColor(name) {
+  for (const e of ELEMENT_WORDS) if (name.includes(e.word)) return e.color;
+  return "var(--el-neutral)";
+}
+
+// 속성 이름 → 설명. 매핑이 있으면 행 아래에 "#id" 대신 이 설명을 보여준다.
+const ATTR_DESC = {
+  "초당 공격 대미지": "초당 입힐 수 있는 대미지",
+  "메인 공격 대미지 합계": "전체 유형의 단일 공격 대미지 합계",
+  "메인 번개 공격 대미지": "메인 단일 원소 공격 대미지",
+  "메인 냉기 공격 대미지": "메인 단일 냉기 공격 대미지",
+  "메인 화염 공격 대미지": "메인 단일 화염 공격 대미지",
+  "대미지 보너스": "해당하는 스킬 태그를 포함한 대미지 보너스 통계. 물리, 냉기, 화염, 번개, 부식, 원소 대미지 보너스 제외",
+  "별도 대미지 보너스": "해당하는 스킬 태그를 포함한 별도 대미지 보너스 통계. 물리, 냉기, 화염, 번개, 부식, 원소 대미지 보너스 제외",
+  "별도 물리 대미지 보너스": "별도 물리 대미지 보너스 통계",
+  "별도 냉기 대미지 보너스": "별도 화염 대미지와 원소 대미지 보너스 통계",
+  "별도 화염 대미지 보너스": "별도 화염 대미지와 원소 대미지 보너스 통계",
+  "별도 번개 대미지 보너스": "별도 번개 대미지와 원소 대미지 보너스 통계",
+  "메인 공격 속도": "메인 초당 공격 횟수",
+  "서브 공격 속도": "서브 초당 공격 횟수",
+  "공격 속도 보너스": "공격 속도 보너스",
+  "추가 공격 속도 보너스": "추가 공격 속도 보너스",
+  "메인 공격 크리티컬 확률": "타깃의 레벨에 따라 변동",
+  "공격 크리티컬 보너스": "공격 크리티컬 보너스",
+  "공격 크리티컬 대미지": "공격 크리티컬로 입힐 수 있는 대미지",
+  "화염 관통": "타깃 대항에 사용되는 화염 저항",
+  "번개 관통": "타깃 대항에 사용되는 번개 저항",
+  "냉기 관통": "타깃 대항에 사용되는 냉기 저항",
+  "부식 관통": "타깃 대항에 사용되는 부식 저항",
+  "대미지 감소 수치의 관통": "대미지 감소 수치의 관통",
+  "오라 효과": "오라 효과",
+  "영약 효과": "영약 효과",
+  "HP에 대한 추가 대미지 증가": "HP에 대한 추가 대미지 증가",
+  "투사체 속도": "투사체 속도 비율 보너스",
+  "슬래시 확률": "휘두르기 적중 후 다음 슬래시 발동 확률",
+  "최대 빙결": "최대 빙결, 기본 10포인트",
+  "수확 시간 보너스": "수확 시간 보너스 비율",
+};
+
+function pick(v) { return v && v.length ? v[0] : null; }
+function subVal(v) { return v && v.length > 1 && v[1] !== v[0] ? v[1] : null; }
+
+const COMBOS = [
+  { comboId: 10500, name: "원소 대미지 (냉기·화염·번개)", pinTop: true, parts: [
+      { ids: [10500, 10501], label: "냉기", color: "var(--el-cold)" },
+      { ids: [10600, 10601], label: "화염", color: "var(--el-fire)" },
+      { ids: [10400, 10401], label: "번개", color: "var(--el-light)" },
+  ]},
+  { comboId: 11000, name: "원소 관통 (냉기·화염·번개·부식)", pinTop: false, parts: [
+      { ids: [11000], label: "냉기", color: "var(--el-cold)" },
+      { ids: [10800], label: "화염", color: "var(--el-fire)" },
+      { ids: [10900], label: "번개", color: "var(--el-light)" },
+      { ids: [11100], label: "부식", color: "var(--el-erosion)" },
+  ]},
+];
+
+let DATA = { columns: [], rows: [] };
+let ROWS = [];
+let byId = new Map();
+let colKeys = [];
+let selectedCols = new Set();
+
+function rebuildDerived() {
+  byId = new Map(DATA.rows.map(r => [r.id, r]));
+  colKeys = DATA.columns.map(c => c.key);
+  const comboMemberIds = new Set(COMBOS.flatMap(c => c.parts.flatMap(p => p.ids)));
+  ROWS = DATA.rows.filter(r => !comboMemberIds.has(r.id));
+  COMBOS.forEach(c => {
+    const buildField = (key) => {
+      const parts = c.parts.map(p => {
+        const vals = p.ids.map(id => byId.get(id)).filter(Boolean).map(row => pick(row.values[key])).filter(v => v !== null && v !== undefined);
+        return { label: p.label, color: p.color, value: vals.length ? vals.reduce((s, v) => s + v, 0) : null };
+      });
+      const present = parts.filter(p => p.value !== null);
+      const total = present.length ? present.reduce((s, p) => s + p.value, 0) : null;
+      return { valueArr: total === null ? [] : [total], parts };
+    };
+    const values = {}, comboParts = {};
+    colKeys.forEach(k => { const f = buildField(k); values[k] = f.valueArr; comboParts[k] = f.parts; });
+    const row = { id: c.comboId, name: c.name, isCombo: true, values, comboParts };
+    if (c.pinTop) ROWS.unshift(row); else ROWS.push(row);
+  });
+}
+
+function highlight(text, q) {
+  if (!q) return text;
+  const idx = text.toLowerCase().indexOf(q.toLowerCase());
+  if (idx === -1) return text;
+  return text.slice(0, idx) + '<mark style="background:var(--accent-soft);color:var(--accent-text);border-radius:2px;">'
+    + text.slice(idx, idx + q.length) + '</mark>' + text.slice(idx + q.length);
+}
+
+let activeCat = "all";
+let query = "";
+let hideZero = true;
+let hideSame = false;
+function isPartial(c) { return typeof c.count === "number" && c.count < DATA.rows.length; }
+function defaultSelectedCols() {
+  const full = DATA.columns.filter(c => !isPartial(c));
+  return new Set((full.length ? full : DATA.columns).map(c => c.key));
+}
+
+function visibleColumns() {
+  return DATA.columns.filter(c => selectedCols.has(c.key));
+}
+function presentValues(r) {
+  return visibleColumns().map(c => pick(r.values[c.key])).filter(v => v !== null);
+}
+function isAllSame(r) {
+  const vals = presentValues(r);
+  if (vals.length < 2) return true;
+  return new Set(vals.map(v => Math.abs(v))).size <= 1;
+}
+
+function renderMeta() {
+  document.getElementById("metaRow").innerHTML = DATA.columns.length ? [
+    `${DATA.rows.length}개 속성 항목`,
+    `다른 유저는 이름·계정ID 없음 — 슬롯 인덱스로만 식별됨`,
+    DATA.columns.some(c => c.isMe) ? `내 스탯은 캐릭터 정보창 속성 탭에서 자동 추출` : `내 캐릭터 데이터 없음`,
+  ].map(t => `<span>${t}</span>`).join("") : "";
+}
+
+function renderColChips() {
+  const chipsEl = document.getElementById("colChips");
+  chipsEl.innerHTML = DATA.columns.map(c => `
+    <button class="chip col-chip" data-key="${c.key}" aria-pressed="${selectedCols.has(c.key)}">
+      <span class="chk-box"></span>
+      ${c.isMe ? '<span style="color:var(--accent-text)">' + c.label + '</span>' : c.label.split(" · ")[0]}
+      ${c.lv && !c.isMe ? `<span class="lv-tag">Lv.${c.lv}</span>` : ""}
+      ${isPartial(c) ? `<span class="lv-tag" title="속성 탭 일부만 캡처됨" style="color:var(--accent-text)">⚠ ${c.count}/${DATA.rows.length}</span>` : ""}
+    </button>
+  `).join("");
+  chipsEl.querySelectorAll(".col-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const key = btn.dataset.key;
+      if (selectedCols.has(key)) {
+        if (selectedCols.size === 1) return;
+        selectedCols.delete(key);
+      } else {
+        selectedCols.add(key);
+      }
+      renderColChips();
+      renderCards();
+      renderPentagon();
+      renderTable();
+    });
+  });
+}
+document.getElementById("selectAllBtn").addEventListener("click", () => {
+  selectedCols = new Set(DATA.columns.map(c => c.key));
+  renderColChips();
+  renderCards();
+  renderPentagon();
+  renderTable();
+});
+
+function keyStat(id) {
+  const r = byId.get(id);
+  const out = {};
+  DATA.columns.forEach(c => { out[c.key] = r ? pick(r.values[c.key]) : null; });
+  return out;
+}
+const highlightStats = [
+  { label: "초당 총 대미지", id: 10100 },
+  { label: "메인 크리티컬 확률", id: 20506 },
+  { label: "총 HP", id: 40900 },
+  { label: "이동 속도 보너스", id: 60100 },
+];
+function renderCards() {
+  const cols = visibleColumns();
+  document.getElementById("cards").innerHTML = cols.map((c) => `
+    <div class="card ${c.isMe ? "me" : ""}">
+      <div class="card-head">
+        <div class="card-name">${c.label.split(" · ")[0]}</div>
+        ${c.lv ? `<div class="lv-badge">Lv.${c.lv}</div>` : ""}
+      </div>
+      ${isPartial(c) ? `<div class="stat-label" style="color:var(--accent-text)">⚠ 부분 캡처 (${c.count}/${DATA.rows.length}개 속성 · 저항/유틸리티 등 일부 탭 미열람)</div>` : ""}
+      <div class="card-stats">
+        ${highlightStats.map(s => {
+          const v = keyStat(s.id);
+          return `<div><div class="stat-label">${s.label}</div><div class="stat-value mono">${fmt(v[c.key])}</div></div>`;
+        }).join("")}
+      </div>
+    </div>
+  `).join("");
+}
+
+// 초당 대미지(10100/10103)가 이미 공격속도×크리확률×크리대미지의 결과물이라 그 셋을 모두
+// 축으로 넣으면 서로 겹치는 정보를 반복 표시하게 된다. 크리 확률·대미지는 "기대배율" 하나로
+// 합치고, 대신 히트당 평균 대미지(플랫 대미지 합)를 넣어 속도와 분리된 축을 확보한다.
+// 공격형/주술형은 두 계열의 DPS(10100 vs 10103) 중 더 큰 쪽을 그 빌드의 주 공격으로 자동 판별한다 —
+// 다른 유저 빌드는 어느 쪽을 주력으로 쓰는지 미리 알 수 없어 수동 선택은 매번 확인이 필요하고,
+// 데이터에 두 계열이 항상 나란히 존재하므로 자동 판별로 충분하다.
+function pentagonId(id, colKey) {
+  const row = byId.get(id);
+  return row ? pick(row.values[colKey]) : null;
+}
+function pentagonAvg(id, colKey) {
+  const row = byId.get(id);
+  if (!row) return null;
+  const v = row.values[colKey];
+  if (!v || !v.length) return null;
+  return v.length > 1 ? (v[0] + v[1]) / 2 : v[0];
+}
+function pentagonBranch(colKey) {
+  const atk = pentagonId(10100, colKey) || 0;
+  const mag = pentagonId(10103, colKey) || 0;
+  return mag > atk ? "magic" : "attack";
+}
+function pentagonPenetration(colKey) {
+  // 냉기·화염·번개·부식 관통 합 — 원소 저항 관통 전체를 하나의 축으로 본다.
+  const ids = [11000, 10800, 10900, 11100];
+  const vals = ids.map(id => pentagonId(id, colKey)).filter(v => v !== null && v !== undefined);
+  return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+}
+const PENTAGON_STATS = [
+  { label: "초당 대미지", value: colKey => pentagonId(pentagonBranch(colKey) === "magic" ? 10103 : 10100, colKey) },
+  { label: "평균 대미지", value: colKey => pentagonAvg(pentagonBranch(colKey) === "magic" ? 11800 : 10200, colKey) },
+  { label: "공격/시전 속도", value: colKey => pentagonId(21000, colKey) ?? pentagonId(20300, colKey) },
+  { label: "크리 기대배율", value: colKey => {
+      const magic = pentagonBranch(colKey) === "magic";
+      const chance = pentagonId(magic ? 21212 : 20506, colKey);
+      const dmg = pentagonId(magic ? 21400 : 20700, colKey);
+      if (chance === null || dmg === null) return null;
+      return 1 + (chance / 100) * (dmg / 100);
+    } },
+  { label: "원소 관통", value: colKey => pentagonPenetration(colKey) },
+];
+const BUILD_PALETTE = ["#e8823a", "#6ec9de", "#a68af0", "#7fc98a", "#e0587a", "#f0c419", "#4fd1c5", "#c77dff"];
+function buildColorFor(key) {
+  const idx = DATA.columns.findIndex(c => c.key === key);
+  return BUILD_PALETTE[(idx < 0 ? 0 : idx) % BUILD_PALETTE.length];
+}
+function pentagonRawValue(axis, colKey) {
+  return axis.value(colKey);
+}
+function renderPentagon() {
+  const svgEl = document.getElementById("pentagonSvg");
+  const legendEl = document.getElementById("pentagonLegend");
+  const cols = visibleColumns();
+  if (!cols.length) { svgEl.innerHTML = ""; legendEl.innerHTML = ""; return; }
+
+  const cx = 200, cy = 170, R = 95;
+  const N = PENTAGON_STATS.length;
+  const angleFor = i => -Math.PI / 2 + i * (2 * Math.PI / N);
+  const ptAt = (i, ratio) => {
+    const a = angleFor(i);
+    return [cx + R * ratio * Math.cos(a), cy + R * ratio * Math.sin(a)];
+  };
+
+  const raw = cols.map(c => PENTAGON_STATS.map(axis => pentagonRawValue(axis, c.key)));
+  const maxByAxis = PENTAGON_STATS.map((_, ai) => Math.max(0, ...raw.map(r => Math.abs(r[ai] || 0))) || 1);
+
+  let svg = "";
+  [0.2, 0.4, 0.6, 0.8, 1.0].forEach(ratio => {
+    const pts = PENTAGON_STATS.map((_, i) => ptAt(i, ratio).join(",")).join(" ");
+    svg += `<polygon points="${pts}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
+  });
+  PENTAGON_STATS.forEach((axis, i) => {
+    const [x, y] = ptAt(i, 1);
+    svg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    const [lx, ly] = ptAt(i, 1.22);
+    const anchor = Math.abs(x - cx) < 6 ? "middle" : (x > cx ? "start" : "end");
+    svg += `<text x="${lx}" y="${ly}" font-size="11" fill="var(--text-dim)" text-anchor="${anchor}" dominant-baseline="middle">${axis.label}</text>`;
+  });
+  cols.forEach((c, ci) => {
+    const color = buildColorFor(c.key);
+    const pts = PENTAGON_STATS.map((axis, ai) => {
+      const v = raw[ci][ai];
+      const ratio = v === null ? 0 : Math.min(1, Math.abs(v) / maxByAxis[ai]);
+      return ptAt(ai, ratio).join(",");
+    }).join(" ");
+    svg += `<polygon points="${pts}" fill="${color}" fill-opacity="0.28" stroke="${color}" stroke-width="2.5"/>`;
+    PENTAGON_STATS.forEach((axis, ai) => {
+      const v = raw[ci][ai];
+      const ratio = v === null ? 0 : Math.min(1, Math.abs(v) / maxByAxis[ai]);
+      const [x, y] = ptAt(ai, ratio);
+      const buildLabel = c.label.split(" · ")[0];
+      svg += `<circle cx="${x}" cy="${y}" r="3" fill="${color}" pointer-events="none"/>`;
+      svg += `<circle cx="${x}" cy="${y}" r="9" fill="transparent" pointer-events="all" data-build="${buildLabel}" data-axis="${axis.label}" data-value="${v === null ? '–' : fmt(v)}"/>`;
+    });
+  });
+  const parsed = new DOMParser().parseFromString(
+    `<svg xmlns="http://www.w3.org/2000/svg">${svg}</svg>`, "image/svg+xml"
+  );
+  svgEl.replaceChildren(...parsed.documentElement.childNodes);
+
+  legendEl.innerHTML = cols.map(c => `
+    <span class="pentagon-legend-item">
+      <span class="pentagon-dot" style="background:${buildColorFor(c.key)}"></span>
+      ${c.label.split(" · ")[0]}${c.lv ? ` · Lv.${c.lv}` : ""}
+    </span>
+  `).join("");
+}
+
+(() => {
+  const svgEl = document.getElementById("pentagonSvg");
+  const wrapEl = document.querySelector(".pentagon-wrap");
+  const tipEl = document.getElementById("pentagonTooltip");
+  svgEl.addEventListener("mouseover", e => {
+    if (e.target.tagName !== "circle" || !e.target.dataset.axis) return;
+    tipEl.innerHTML = "";
+    const buildSpan = document.createElement("span");
+    buildSpan.className = "ptip-build";
+    buildSpan.textContent = `${e.target.dataset.build} · ${e.target.dataset.axis}`;
+    const valueSpan = document.createElement("span");
+    valueSpan.className = "ptip-value";
+    valueSpan.textContent = e.target.dataset.value;
+    tipEl.append(buildSpan, valueSpan);
+    tipEl.style.display = "block";
+  });
+  svgEl.addEventListener("mousemove", e => {
+    if (tipEl.style.display !== "block") return;
+    const rect = wrapEl.getBoundingClientRect();
+    tipEl.style.left = Math.round(e.clientX - rect.left + 14) + "px";
+    tipEl.style.top = Math.round(e.clientY - rect.top + 14) + "px";
+  });
+  svgEl.addEventListener("mouseout", e => {
+    if (e.target.tagName === "circle") tipEl.style.display = "none";
+  });
+})();
+
+const chipsEl = document.getElementById("chips");
+function renderChips() {
+  const all = [{ key: "all", label: "전체" }, ...CATS];
+  chipsEl.innerHTML = all.map(c =>
+    `<button class="chip" data-key="${c.key}" aria-pressed="${activeCat === c.key}">${c.label}</button>`
+  ).join("");
+  chipsEl.querySelectorAll(".chip").forEach(btn => {
+    btn.addEventListener("click", () => { activeCat = btn.dataset.key; renderChips(); renderTable(); });
+  });
+}
+
+function renderHeader() {
+  const cols = visibleColumns();
+  const headRow = document.getElementById("headRow");
+  headRow.innerHTML = `<th style="width:28%">속성</th>` +
+    cols.map(c => `<th class="num"${c.isMe ? ' style="color:var(--accent-text)"' : ""}>${c.label}</th>`).join("");
+}
+
+function renderTable() {
+  renderHeader();
+  const cols = visibleColumns();
+  const tbody = document.getElementById("tbody");
+  const emptyMsg = document.getElementById("emptyMsg");
+  const q = query.trim();
+
+  let filtered = ROWS.filter(r => {
+    const cat = categoryOf(r.id);
+    if (activeCat !== "all" && cat.key !== activeCat) return false;
+    if (q && !r.name.toLowerCase().includes(q.toLowerCase()) && !String(r.id).includes(q)) return false;
+    if (hideZero) {
+      const vals = cols.map(c => pick(r.values[c.key]) || 0);
+      if (vals.every(v => v === 0)) return false;
+    }
+    if (hideSame && isAllSame(r)) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = "";
+    emptyMsg.style.display = "block";
+    return;
+  }
+  emptyMsg.style.display = "none";
+
+  const order = activeCat === "all" ? CATS.map(c => c.key).concat(["etc"]) : [activeCat];
+  const grouped = new Map();
+  filtered.forEach(r => {
+    const k = categoryOf(r.id).key;
+    if (!grouped.has(k)) grouped.set(k, []);
+    grouped.get(k).push(r);
+  });
+
+  let html = "";
+  const keysInOrder = activeCat === "all"
+    ? Array.from(grouped.keys()).sort((x, y) => order.indexOf(x) - order.indexOf(y))
+    : Array.from(grouped.keys());
+
+  keysInOrder.forEach(k => {
+    const label = (CATS.find(c => c.key === k) || { label: "기타" }).label;
+    if (activeCat === "all") {
+      html += `<tr class="cat-row"><td colspan="${cols.length + 1}">${label} · ${grouped.get(k).length}개</td></tr>`;
+    }
+    grouped.get(k).forEach(r => {
+      const present = presentValues(r);
+      const maxAbs = Math.max(...present.map(v => Math.abs(v)), 0) || 1;
+      const showDiff = new Set(present.map(v => Math.abs(v))).size > 1;
+      const isMax = (v) => showDiff && v !== null && Math.abs(v) === maxAbs;
+      const color = r.isCombo ? "var(--accent)" : dotColor(r.name);
+      const nameHtml = highlight(r.name, q);
+      const partsTip = (parts) => parts.filter(p => p.value !== null).map(p =>
+        `<div class="tip-row"><span class="tip-dot" style="background:${p.color}"></span>${p.label} <span class="mono">${fmt(p.value)}</span></div>`
+      ).join("");
+      const cell = (c) => {
+        const val = pick(r.values[c.key]);
+        const sub = subVal(r.values[c.key]);
+        const parts = r.isCombo ? r.comboParts[c.key] : null;
+        const hasTip = parts && parts.some(p => p.value !== null);
+        return `
+          <td class="val-cell${isMax(val) ? " is-max" : ""}">
+            <span class="val-num mono${hasTip ? " tip-wrap" : ""}"${hasTip ? ' tabindex="0"' : ""}>${fmt(val)}${hasTip ? `<span class="tip-pop">${partsTip(parts)}</span>` : ""}</span>${sub !== null ? ` <span class="val-sub mono">- ${fmt(sub)}</span>` : ""}
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, Math.abs(val||0)/maxAbs*100)}%;background:${color}"></div></div>
+          </td>`;
+      };
+      html += `
+        <tr class="data-row">
+          <td class="name-cell">
+            <span class="dot" style="background:${color}"></span>
+            <span><div class="name-text">${nameHtml}</div><div class="${ATTR_DESC[r.name] ? "attr-desc" : "attr-id"}">${ATTR_DESC[r.name] || ("#" + r.id)}</div></span>
+          </td>
+          ${cols.map(cell).join("")}
+        </tr>`;
+    });
+  });
+
+  tbody.innerHTML = html;
+}
+
+document.getElementById("search").addEventListener("input", e => { query = e.target.value; renderTable(); });
+document.getElementById("hideZero").addEventListener("change", e => { hideZero = e.target.checked; renderTable(); });
+document.getElementById("hideSame").addEventListener("change", e => { hideSame = e.target.checked; renderTable(); });
+
+// --- file loading ---
+const fileInput = document.getElementById("fileInput");
+const uploadBox = document.getElementById("uploadBox");
+const uploadStatus = document.getElementById("uploadStatus");
+
+uploadBox.addEventListener("click", () => fileInput.click());
+uploadBox.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); } });
+uploadBox.addEventListener("dragover", e => { e.preventDefault(); uploadBox.classList.add("dragover"); });
+uploadBox.addEventListener("dragleave", () => uploadBox.classList.remove("dragover"));
+uploadBox.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadBox.classList.remove("dragover");
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (f) loadFile(f);
+});
+fileInput.addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0];
+  if (f) loadFile(f);
+  fileInput.value = "";
+});
+
+async function loadFile(file) {
+  uploadStatus.classList.remove("error");
+  uploadStatus.textContent = `${file.name} 분석 중...`;
+  try {
+    const text = await file.text();
+    const raw = await buildCandidates(text);
+    const candidates = dedupe(raw);
+    const selfSnaps = candidates.filter(c => c.isSelf);
+    const others = candidates.filter(c => !c.isSelf);
+    const me = selfSnaps.length ? selfSnaps.reduce((a, b) => (b.count > a.count ? b : a)) : null;
+
+    const columns = [];
+    const columnsAttrs = {};
+    if (me) {
+      columns.push({ key: "me", label: "내 캐릭터", lv: me.lv, isMe: true, count: me.count });
+      columnsAttrs.me = me.attrs;
+    }
+    others.forEach((c, i) => {
+      const key = `b${i}`;
+      columns.push({ key, label: `빌드 ${i + 1} · Lv.${c.lv}`, lv: c.lv, isMe: false, count: c.count });
+      columnsAttrs[key] = c.attrs;
+    });
+
+    if (!columns.length) {
+      uploadStatus.classList.add("error");
+      uploadStatus.textContent = "속성 탭을 연 기록을 로그에서 찾지 못했습니다. 캐릭터 정보창 또는 빌드 참조 화면에서 속성 탭을 한 번 열어본 뒤 다시 시도하세요.";
+      document.getElementById("colSelectSection").style.display = "none";
+      document.getElementById("pentagonSection").style.display = "none";
+      document.getElementById("controlsSection").style.display = "none";
+      document.getElementById("tableSection").style.display = "none";
+      document.getElementById("cards").innerHTML = "";
+      return;
+    }
+
+    DATA = { columns, rows: buildRows(columnsAttrs) };
+    selectedCols = defaultSelectedCols();
+    rebuildDerived();
+
+    document.getElementById("colSelectSection").style.display = "";
+    document.getElementById("pentagonSection").style.display = "";
+    document.getElementById("controlsSection").style.display = "";
+    document.getElementById("tableSection").style.display = "";
+
+    uploadStatus.textContent = `${file.name} · 속성 덤프 ${candidates.length}건 인식 — ` +
+      (me ? `내 캐릭터 Lv.${me.lv} 자동 포함, ` : "내 캐릭터 데이터 없음, ") +
+      `다른 유저 빌드 ${others.length}건 (아래에서 표시 여부 선택 가능)`;
+
+    renderMeta();
+    renderColChips();
+    renderChips();
+    renderCards();
+    renderPentagon();
+    renderTable();
+  } catch (err) {
+    uploadStatus.classList.add("error");
+    uploadStatus.textContent = "오류: " + err.message;
+    console.error(err);
+  }
+}
+
+renderChips();
+</script>
